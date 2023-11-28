@@ -16,7 +16,7 @@ export class ContactFormDto {
   @IsNotEmpty({ message: "The 'Phone Number' field must not be empty." })
   @IsPhoneNumber('RU', { message: 'The phone number must be valid.' })
   @MaxLength(50, { message: "The 'Phone Number' field must not exceed 50 characters." })
-  readonly phoneNumber: string;
+  readonly phone: string;
 
   @ApiProperty({ description: 'Тип проблемы' })
   @IsNotEmpty({ message: "Select 'Topic'" })

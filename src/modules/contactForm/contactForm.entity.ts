@@ -8,7 +8,7 @@ export class ContactForm {
   id: number;
 
   @ApiProperty({ description: 'Имя и фамилия пользователя', example: 'Ivan Ivanov' })
-  @Column({ nullable: false })
+  @Column({ length: 100, nullable: false })
   fullName: string;
 
   @ApiProperty({ description: 'Email пользователя', example: 'user@mail.ru' })
@@ -16,14 +16,14 @@ export class ContactForm {
   email: string;
 
   @ApiProperty({ description: 'Мобильный номер пользователя', example: '+7 0123456789' })
-  @Column({ nullable: false, unique: true })
+  @Column({ nullable: false })
   phone: string;
 
   @ApiProperty({ description: 'Тип проблемы' })
   @Column({ nullable: false })
   topic: string;
 
-  @ApiProperty({ description: 'Сообщение' })
-  @Column('text')
+  @ApiProperty({ description: 'Сообщение', example: 'Ваше сообщение здесь' })
+  @Column({ nullable: true, length: 500 })
   message: string;
 }
