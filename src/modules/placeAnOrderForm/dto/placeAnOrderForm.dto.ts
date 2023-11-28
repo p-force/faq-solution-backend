@@ -64,5 +64,5 @@ export class PlaceAnOrderFormDto {
   })
   @ArrayMaxSize(1, { message: 'There should not be more than two elements.' })
   @IsMimeType('text/plain' as ValidationOptions)
-  readonly uploadFile: string;
+  readonly file: string;
 }

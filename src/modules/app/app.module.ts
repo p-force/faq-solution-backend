@@ -5,9 +5,16 @@ import { configModuleOptions } from '../../common/config';
 import { DbModule } from '../../common/modules/db/db.module';
 import { LoggerModule } from '../../common/modules/logger/logger.module';
 import { AppController } from './app.controller';
+import { PlaceAnOrderFormModule } from '../placeAnOrderForm/placeAnOrderForm.module';
 
 @Module({
-  imports: [ContactFormModule, DbModule, LoggerModule, ConfigModule.forRoot(configModuleOptions)],
+  imports: [
+    ContactFormModule,
+    PlaceAnOrderFormModule,
+    DbModule,
+    LoggerModule,
+    ConfigModule.forRoot(configModuleOptions),
+  ],
   controllers: [AppController],
   providers: [],
 })

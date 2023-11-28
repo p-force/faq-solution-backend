@@ -4,10 +4,10 @@ import { PlaceAnOrderFormController } from './placeAnOrderForm.controller';
 import { PlaceAnOrderForm } from './entities/placeAnOrderForm.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailerModule } from 'src/common/modules/mailer/mailer.module';
-import { User } from './entities/user.entuty';
+import { Users } from './entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PlaceAnOrderForm, User]), MailerModule],
+  imports: [TypeOrmModule.forFeature([PlaceAnOrderForm, Users]), MailerModule],
   controllers: [PlaceAnOrderFormController],
   providers: [PlaceAnOrderFormService],
 })

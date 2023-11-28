@@ -20,7 +20,7 @@ export class PlaceAnOrderFormController {
     status: HttpStatus.BAD_REQUEST,
     description: `${FormStatusMessages.ERROR}\t\n\t\nsome error message`,
   })
-  @Post()
+  @Post('order')
   async create(@Body() createUserDto: PlaceAnOrderFormDto) {
     return this.placeAnOrderService.createUser(createUserDto);
   }

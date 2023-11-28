@@ -7,15 +7,15 @@ import { MailerService } from 'src/common/modules/mailer/mailer.service';
 import { MailerConfigType, MAILER_CONFIG_KEY } from 'src/common/config/mailer.config';
 import { PlaceAnOrderFormDto } from './dto/placeAnOrderForm.dto';
 import bcrypt from 'bcryptjs';
-import { User } from './entities/user.entuty';
+import { Users } from './entities/user.entity';
 
 @Injectable()
 export class PlaceAnOrderFormService {
   constructor(
     @InjectRepository(PlaceAnOrderForm)
     private placeAnOrderRepository: Repository<PlaceAnOrderForm>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(Users)
+    private readonly userRepository: Repository<Users>,
     @Inject(APP_CONFIG_KEY)
     private readonly appConfig: AppConfigType,
     @Inject(MAILER_CONFIG_KEY)
@@ -40,7 +40,6 @@ export class PlaceAnOrderFormService {
     if (!user) {
       const password = this.gen_password();
       const hash = await bcrypt.hash(password, 10);
-
       user = await this.userRepository.save({
         email: createUserDto.email,
         password: hash,
@@ -77,7 +76,7 @@ export class PlaceAnOrderFormService {
         pages: createUserDto.pages,
         coupon: createUserDto.coupon,
         writerAndEditorLevel: createUserDto.writerAndEditorLevel,
-        uploadFile: createUserDto.uploadFile,
+        uploadFile: createUserDto.file,
         message: createUserDto.message,
       },
     });

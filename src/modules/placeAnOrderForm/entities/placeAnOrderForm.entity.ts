@@ -37,7 +37,7 @@ export class PlaceAnOrderForm {
 
   @ApiProperty({ description: 'Загрузка файла', example: 'file.doc' })
   @Column({ nullable: true })
-  uploadFile: string;
+  file: string;
 
   @ApiProperty({ description: 'Сообщение' })
   @Column({ nullable: true, length: 500 })
