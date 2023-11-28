@@ -28,13 +28,12 @@ export class PlaceAnOrderFormService {
     const result = Math.random()
       .toString(36)
       .slice(2, 2 + len);
-    console.log(result);
     if (!result.match(/[a-zA-Z]/gm)) return this.gen_password();
     if (!result.match(/[0-9]/gm)) return this.gen_password();
     return result;
   }
 
-  async createUser(createUserDto: PlaceAnOrderFormDto): Promise<User> {
+  async createUser(createUserDto: PlaceAnOrderFormDto): Promise<PlaceAnOrderForm> {
     let user = await this.userRepository.findOne({
       where: { email: createUserDto.email },
     });
