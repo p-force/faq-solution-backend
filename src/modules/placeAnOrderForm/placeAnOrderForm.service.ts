@@ -41,6 +41,7 @@ export class PlaceAnOrderFormService {
       const password = this.gen_password();
       const hash = await bcrypt.hash(password, 10);
       user = await this.userRepository.save({
+        fullName: createUserDto.fullName,
         email: createUserDto.email,
         password: hash,
       });
