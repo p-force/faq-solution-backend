@@ -8,14 +8,20 @@ import { AuthFormDto } from './dto/users.dto';
 import bcrypt from 'bcryptjs';
 import { AuthStatusMessages } from './dto/auth.constants';
 import { LoginFormDto } from './dto/login.dto';
-import { RecoveryPasswordCode } from './recovery.entity';
+import { RecoveryPasswordCode } from './entities/recovery.entity';
+import { UserTokens } from './entities/user_tokens.entity';
+import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenDto } from './dto/refresh.dto';
+import { LogoutDto } from './dto/logout.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Users) private readonly authRepository: Repository<Users>,
+    @InjectRepository(UserTokens) private readonly tokenRepository: Repository<UserTokens>,
     @InjectRepository(RecoveryPasswordCode)
     private readonly recoveryPasswordRepository: Repository<RecoveryPasswordCode>,
+    private jwtService: JwtService,
     @Inject(MAILER_CONFIG_KEY)
     private readonly mailConfig: MailerConfigType,
     private readonly mailerService: MailerService,
@@ -67,7 +73,7 @@ export class AuthService {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.INVALID,
+          error: AuthStatusMessages.NOT_FOUND,
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -77,12 +83,74 @@ export class AuthService {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.INVALID,
+          error: AuthStatusMessages.NOT_FOUND,
         },
         HttpStatus.BAD_REQUEST,
       );
     }
-    return AuthStatusMessages.AUTHORUZED_SUCCESSFULLY;
+    const payload = { userId: user.id, email: user.email };
+    const token = this.jwtService.sign(payload);
+
+    return token;
+  }
+
+  async logout(logoutDto: LogoutDto): Promise<string> {
+    const token = await this.tokenRepository.findOne({
+      where: { userId: logoutDto.userId, refreshToken: logoutDto.refreshToken },
+    });
+
+    if (!token) {
+      throw new HttpException(AuthStatusMessages.NOT_FOUND, HttpStatus.UNAUTHORIZED);
+    }
+
+    await this.tokenRepository.update(
+      { id: token.id },
+      { deletedAt: new Date(), expiresAt: new Date() },
+    );
+
+    return AuthStatusMessages.UNAUTHORIZED_SUCCESSFULLY;
+  }
+
+  async refreshToken(tokenDto: RefreshTokenDto): Promise<string> {
+    const userToken = await this.tokenRepository.findOne({
+      where: { userId: tokenDto.userId },
+    });
+
+    if (!userToken) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: AuthStatusMessages.NOT_FOUND,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (userToken.refreshToken !== tokenDto.refreshToken) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: AuthStatusMessages.INCORRECT_CODE,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Проверка срока действия refresh токена
+    const currentTime = new Date();
+    if (currentTime > userToken.expiresAt) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: AuthStatusMessages.EXPIRED_TOKEN,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const newAccessToken = this.jwtService.sign({ userId: tokenDto.userId });
+
+    return newAccessToken;
   }
 
   async recoveryPassword(email: string): Promise<string> {
@@ -93,7 +161,7 @@ export class AuthService {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.DONT_FOUND,
+          error: AuthStatusMessages.NOT_FOUND,
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -107,11 +175,16 @@ export class AuthService {
       });
     }
     const recoveryCode = this.generateRecoveryCode();
+    const expirationTime = new Date();
+    expirationTime.setMinutes(expirationTime.getMinutes() + 30); // Добавляем 30 минут к текущему времени
+
     await this.recoveryPasswordRepository.save({
       userId: user.id,
       code: recoveryCode,
       deletedAt: null,
+      expiresAt: expirationTime, // Устанавливаем время истечения
     });
+
     await this.mailerService.sendMail({
       subject: 'Password recovery',
       emails: [email],
@@ -130,7 +203,7 @@ export class AuthService {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.DONT_FOUND,
+          error: AuthStatusMessages.NOT_FOUND,
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -142,7 +215,7 @@ export class AuthService {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.ERROR_SET_PASSWORD,
+          error: AuthStatusMessages.CODE_NOT_FOUND,
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -151,7 +224,16 @@ export class AuthService {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.ERROR_SET_PASSWORD,
+          error: AuthStatusMessages.INCORRECT_CODE,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (existCode.expiresAt < new Date()) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: AuthStatusMessages.EXPIRED_CODE,
         },
         HttpStatus.BAD_REQUEST,
       );

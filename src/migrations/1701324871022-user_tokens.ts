@@ -1,11 +1,11 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RecoveryPasswordCode1701212003957 implements MigrationInterface {
+export class UserTokens1701324871022 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`CREATE TABLE "recovery_password_code" (
+    await queryRunner.query(`CREATE TABLE "user_tokens" (
         id SERIAL PRIMARY KEY,
         "userId" INTEGER NOT NULL,
-        "code" TEXT NOT NULL,
+        "refreshToken" TEXT NOT NULL,
         "deletedAt" TIMESTAMP,
         "expiresAt" TIMESTAMP NOT NULL,
         FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE
@@ -13,6 +13,6 @@ export class RecoveryPasswordCode1701212003957 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE "recovery_password_code"`);
+    await queryRunner.query(`DROP TABLE "user_tokens"`);
   }
 }

@@ -7,7 +7,7 @@ export class LoginFormDto {
   @IsEmail({}, { message: 'Invalid email.' })
   readonly email: string;
 
-  @ApiProperty({ description: 'Пароль пользователя', example: '#VeryCoolPassword1234' })
+  @ApiProperty({ description: 'Пароль пользователя', example: 'Pwd12345' })
   @IsString({ message: 'The password must be a string.' })
   @IsStrongPassword({}, { message: 'The password is too simple.' })
   @MaxLength(8, { message: "The 'Password' field must not exceed 8 characters." })

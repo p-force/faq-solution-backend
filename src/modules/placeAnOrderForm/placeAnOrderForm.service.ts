@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PlaceAnOrderForm } from './entities/placeAnOrderForm.entity';
 import { Repository } from 'typeorm';
@@ -8,6 +8,9 @@ import { MailerConfigType, MAILER_CONFIG_KEY } from 'src/common/config/mailer.co
 import { PlaceAnOrderFormDto } from './dto/placeAnOrderForm.dto';
 import bcrypt from 'bcryptjs';
 import { Users } from './entities/user.entity';
+import { v4 as uuid } from 'uuid';
+import { createWriteStream, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class PlaceAnOrderFormService {
@@ -65,6 +68,12 @@ export class PlaceAnOrderFormService {
     }
 
     const result = await this.placeAnOrderRepository.save(createUserDto);
+
+    await this.mailerService.sendMail({
+      subject: 'Refund',
+      emails: [createUserDto.email],
+      htmlTemplate: 'refund',
+    });
     await this.mailerService.sendMail({
       subject: 'New reg form',
       emails: [this.mailConfig.managerEmail],
@@ -82,5 +91,29 @@ export class PlaceAnOrderFormService {
       },
     });
     return result;
+  }
+
+  putNewFile(file: Express.Multer.File) {
+    if (!file?.originalname || !file?.buffer)
+      throw new BadRequestException({ file: 'Uncorrect file' });
+    const maxSize = 20 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new BadRequestException({ file: 'File is too large' });
+    }
+    const filename = uuid() + '.' + this.ext(file.originalname);
+
+    const dirPath = join(process.cwd(), 'doc');
+    if (!existsSync(dirPath)) mkdirSync(dirPath);
+    try {
+      createWriteStream(join(dirPath, filename)).write(file.buffer);
+    } catch (error) {
+      throw new BadRequestException({ file: 'Error saving file' });
+    }
+    return { url: this.appConfig.appUrl + `/files/${filename}` };
+  }
+
+  private ext(name: string): string {
+    const m = name.match(/\.([^.]+)$/);
+    return m && m[1];
   }
 }
