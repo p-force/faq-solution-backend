@@ -93,6 +93,18 @@ export class AuthService {
       );
     }
     const payload = { sub: user.id, username: user.email };
+    const token = await this.tokenRepository.findOne({ where: { userId: user.id } });
+    if (token) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: AuthStatusMessages.ALREADY_LOGGED_IN,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const refreshToken = await this.generateRefreshToken({ userId: user.id.toString() });
+    await this.tokenRepository.save({ userId: user.id, refreshToken: refreshToken });
     return {
       accessToken: await this.jwtService.signAsync(payload),
     };
@@ -143,9 +155,21 @@ export class AuthService {
     const { userId } = this.jwtService.verify(tokenDto.refreshToken, {
       secret: this.configService.get('JWT_SECRET'),
     });
-    return this.generateTokens({
-      userId,
-    });
+    const token = await this.tokenRepository.findOne({ where: { userId } });
+    if (!token) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: AuthStatusMessages.EXPIRED_TOKEN,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    await this.tokenRepository.update({ userId }, { deletedAt: new Date() });
+    const tokens = await this.generateTokens({ userId });
+    await this.tokenRepository.save({ userId, refreshToken: tokens.refreshToken });
+
+    return tokens;
   }
   async recoveryPassword(email: string): Promise<string> {
     const user = await this.authRepository.findOne({

@@ -13,4 +13,5 @@ export enum AuthStatusMessages {
   EXPIRED_CODE = 'Verification Code Expired',
   CODE_NOT_FOUND = 'Verification Code Not Found',
   EXPIRED_TOKEN = 'Token Expired',
+  ALREADY_LOGGED_IN = 'Already Logged In',
 }

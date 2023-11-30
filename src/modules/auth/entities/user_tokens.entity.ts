@@ -19,10 +19,6 @@ export class UserTokens {
   @Column({ nullable: true })
   deletedAt: Date;
 
-  @ApiProperty({ description: 'Дата и время истечения срока действия токена' })
-  @Column({})
-  expiresAt: Date;
-
   @ManyToOne(() => Users, (user) => user.id, { onDelete: 'CASCADE' })
   user: Users;
 }

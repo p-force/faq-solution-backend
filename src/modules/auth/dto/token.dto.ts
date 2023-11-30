@@ -7,7 +7,7 @@ export class Token {
   })
   @IsString({ message: 'The Refresh token must be a string.' })
   @IsNotEmpty({ message: 'The Refresh token must not be empty.' })
-  accessToken: string;
+  readonly accessToken: string;
 
   @ApiProperty({
     description: 'Access Token пользователя',

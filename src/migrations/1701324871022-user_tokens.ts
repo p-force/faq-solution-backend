@@ -7,7 +7,6 @@ export class UserTokens1701324871022 implements MigrationInterface {
         "userId" INTEGER NOT NULL,
         "refreshToken" TEXT NOT NULL,
         "deletedAt" TIMESTAMP,
-        "expiresAt" TIMESTAMP NOT NULL,
         FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE
         )`);
   }
