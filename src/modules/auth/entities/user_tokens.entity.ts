@@ -20,7 +20,7 @@ export class UserTokens {
   deletedAt: Date;
 
   @ApiProperty({ description: 'Дата и время истечения срока действия токена' })
-  @Column({ nullable: true })
+  @Column({})
   expiresAt: Date;
 
   @ManyToOne(() => Users, (user) => user.id, { onDelete: 'CASCADE' })

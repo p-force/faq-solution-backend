@@ -6,7 +6,7 @@ export enum AuthStatusMessages {
   ALREADY_EXISTS = 'An Account with this Email Already Exists',
   INVALID = 'Invalid Login Credentials',
   AUTHORIZED_SUCCESSFULLY = 'Authorization Successful',
-  UNAUTHORIZED_SUCCESSFULLY = 'Logout Successful',
+  UNAUTHORIZED = 'Error when logging out',
   NOT_FOUND = 'No Account Found with this Email',
   PASSWORD_UPDATED_SUCCESSFULLY = 'Password Updated Successfully',
   INCORRECT_CODE = 'Incorrect Verification Code',

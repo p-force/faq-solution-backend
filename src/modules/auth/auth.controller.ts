@@ -35,7 +35,7 @@ export class AuthController {
     description: `${AuthStatusMessages.NOT_FOUND}\t\n\t\nNo Account Found with this Email`,
   })
   @Post('/login')
-  async login(@Body() loginDto: LoginFormDto): Promise<string> {
+  async login(@Body() loginDto: LoginFormDto): Promise<{ accessToken: string }> {
     return this.authService.login(loginDto);
   }
 
@@ -66,7 +66,7 @@ export class AuthController {
     },
   })
   @Post('/refresh-token')
-  async refreshToken(@Body() tokenDto: RefreshTokenDto): Promise<{ access_token: string }> {
+  async refreshToken(@Body() tokenDto: RefreshTokenDto) {
     try {
       const newAccessToken = await this.authService.refreshToken(tokenDto);
 

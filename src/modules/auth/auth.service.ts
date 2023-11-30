@@ -9,10 +9,13 @@ import bcrypt from 'bcryptjs';
 import { AuthStatusMessages } from './dto/auth.constants';
 import { LoginFormDto } from './dto/login.dto';
 import { RecoveryPasswordCode } from './entities/recovery.entity';
-import { UserTokens } from './entities/user_tokens.entity';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshTokenDto } from './dto/refresh.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { ConfigService } from '@nestjs/config';
+import { Token } from './dto/token.dto';
+import { SecurityConfig } from './dto/config';
+import { UserTokens } from './entities/user_tokens.entity';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +28,7 @@ export class AuthService {
     @Inject(MAILER_CONFIG_KEY)
     private readonly mailConfig: MailerConfigType,
     private readonly mailerService: MailerService,
+    private readonly configService: ConfigService,
   ) {}
   async registration(authDto: AuthFormDto): Promise<string> {
     const user = await this.authRepository.findOne({
@@ -65,7 +69,7 @@ export class AuthService {
     return code;
   }
 
-  async login(loginDto: LoginFormDto): Promise<string> {
+  async login(loginDto: LoginFormDto): Promise<{ accessToken: string }> {
     const user = await this.authRepository.findOne({
       where: { email: loginDto.email },
     });
@@ -88,71 +92,61 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const payload = { userId: user.id, email: user.email };
-    const token = this.jwtService.sign(payload);
-
-    return token;
+    const payload = { sub: user.id, username: user.email };
+    return {
+      accessToken: await this.jwtService.signAsync(payload),
+    };
   }
 
-  async logout(logoutDto: LogoutDto): Promise<string> {
-    const token = await this.tokenRepository.findOne({
-      where: { userId: logoutDto.userId, refreshToken: logoutDto.refreshToken },
+  async logout(logoutDto: LogoutDto) {
+    try {
+      const decoded = this.jwtService.verify(logoutDto.refreshToken);
+      if (!decoded) {
+        throw new HttpException(
+          {
+            status: HttpStatus.BAD_REQUEST,
+            error: AuthStatusMessages.EXPIRED_TOKEN,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.UNAUTHORIZED,
+          error: AuthStatusMessages.UNAUTHORIZED,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+  }
+
+  generateTokens(payload: { userId: string }): Token {
+    return {
+      accessToken: this.generateAccessToken(payload),
+      refreshToken: this.generateRefreshToken(payload),
+    };
+  }
+
+  private generateAccessToken(payload: { userId: string }): string {
+    return this.jwtService.sign(payload);
+  }
+  private generateRefreshToken(payload: { userId: string }): string {
+    const securityConfig = this.configService.get<SecurityConfig>('security');
+    return this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_SECRET'),
+      expiresIn: securityConfig!.refreshIn,
     });
-
-    if (!token) {
-      throw new HttpException(AuthStatusMessages.NOT_FOUND, HttpStatus.UNAUTHORIZED);
-    }
-
-    await this.tokenRepository.update(
-      { id: token.id },
-      { deletedAt: new Date(), expiresAt: new Date() },
-    );
-
-    return AuthStatusMessages.UNAUTHORIZED_SUCCESSFULLY;
   }
 
-  async refreshToken(tokenDto: RefreshTokenDto): Promise<string> {
-    const userToken = await this.tokenRepository.findOne({
-      where: { userId: tokenDto.userId },
+  async refreshToken(tokenDto: RefreshTokenDto): Promise<Token> {
+    const { userId } = this.jwtService.verify(tokenDto.refreshToken, {
+      secret: this.configService.get('JWT_SECRET'),
     });
-
-    if (!userToken) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.NOT_FOUND,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    if (userToken.refreshToken !== tokenDto.refreshToken) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.INCORRECT_CODE,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    // Проверка срока действия refresh токена
-    const currentTime = new Date();
-    if (currentTime > userToken.expiresAt) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.EXPIRED_TOKEN,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const newAccessToken = this.jwtService.sign({ userId: tokenDto.userId });
-
-    return newAccessToken;
+    return this.generateTokens({
+      userId,
+    });
   }
-
   async recoveryPassword(email: string): Promise<string> {
     const user = await this.authRepository.findOne({
       where: { email: email },

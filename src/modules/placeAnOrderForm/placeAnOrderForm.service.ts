@@ -11,6 +11,7 @@ import { Users } from './entities/user.entity';
 import { v4 as uuid } from 'uuid';
 import { createWriteStream, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { PRICE_CONFIG } from './dto/priceConfig.interface';
 
 @Injectable()
 export class PlaceAnOrderFormService {
@@ -91,6 +92,28 @@ export class PlaceAnOrderFormService {
       },
     });
     return result;
+  }
+  async getPrice(
+    deliveryTime: string,
+    writerAndEditorLevel: string,
+    pages: string,
+  ): Promise<number> {
+    if (!PRICE_CONFIG.deliveryTimeToPrice[deliveryTime]) {
+      throw new Error(`Invalid delivery time: ${deliveryTime}`);
+    }
+    if (!PRICE_CONFIG.writerAndEditorLevelToPrice[writerAndEditorLevel]) {
+      throw new Error(`Invalid writer and editor level: ${writerAndEditorLevel}`);
+    }
+
+    const pagesNumber = Number(pages);
+    if (isNaN(pagesNumber)) {
+      throw new Error(`Invalid number of pages: ${pages}`);
+    }
+
+    const deliveryPrice = pagesNumber * PRICE_CONFIG.deliveryTimeToPrice[deliveryTime];
+    const levelPrice = pagesNumber * PRICE_CONFIG.writerAndEditorLevelToPrice[writerAndEditorLevel];
+
+    return deliveryPrice + levelPrice;
   }
 
   putNewFile(file: Express.Multer.File) {

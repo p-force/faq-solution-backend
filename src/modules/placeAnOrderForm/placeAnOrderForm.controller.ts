@@ -32,6 +32,12 @@ export class PlaceAnOrderFormController {
     return this.placeAnOrderService.createUser(createUserDto);
   }
 
+  @ApiOperation({ summary: 'Получение стоимости' })
+  @Post('get-price')
+  async getPrice(@Body() delivaryTime: string, writerAndEditorLevel: string, pages: string) {
+    return this.placeAnOrderService.getPrice(delivaryTime, writerAndEditorLevel, pages);
+  }
+
   @ApiOperation({
     summary: 'Upload passport/ID photo',
     description: 'WARN! Multipart/form-data',
@@ -49,7 +55,7 @@ export class PlaceAnOrderFormController {
   })
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  @Post('/upload')
+  @Post('upload')
   putNewFile(@UploadedFile('file') file: Express.Multer.File): { url: string } {
     return this.placeAnOrderService.putNewFile(file);
   }

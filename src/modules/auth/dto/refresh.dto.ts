@@ -4,7 +4,6 @@ import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 export class RefreshTokenDto {
   @ApiProperty({
     description: 'Refresh Token пользователя',
-    example: 'dGhpc2lzYXJlZnJlc2h0b2tlbi...',
   })
   @IsString({ message: 'The refresh token must be a string.' })
   @IsNotEmpty({ message: 'The refresh token must not be empty.' })
