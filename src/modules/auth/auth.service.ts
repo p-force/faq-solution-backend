@@ -11,17 +11,14 @@ import { LoginFormDto } from './dto/login.dto';
 import { RecoveryPasswordCode } from './entities/recovery.entity';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshTokenDto } from './dto/refresh.dto';
-import { LogoutDto } from './dto/logout.dto';
 import { ConfigService } from '@nestjs/config';
 import { Token } from './dto/token.dto';
 import { SecurityConfig } from './dto/config';
-import { UserTokens } from './entities/user_tokens.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Users) private readonly authRepository: Repository<Users>,
-    @InjectRepository(UserTokens) private readonly tokenRepository: Repository<UserTokens>,
     @InjectRepository(RecoveryPasswordCode)
     private readonly recoveryPasswordRepository: Repository<RecoveryPasswordCode>,
     private jwtService: JwtService,
@@ -31,9 +28,13 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
   async registration(authDto: AuthFormDto): Promise<string> {
+    if (!authDto.email || !authDto.password || !authDto.fullName || !authDto.phone) {
+      throw new HttpException(AuthStatusMessages.INVALID, HttpStatus.BAD_REQUEST);
+    }
     const user = await this.authRepository.findOne({
       where: { email: authDto.email },
     });
+    console.log('user', authDto.email);
     if (user) {
       throw new HttpException(
         {
@@ -93,44 +94,9 @@ export class AuthService {
       );
     }
     const payload = { sub: user.id, username: user.email };
-    const token = await this.tokenRepository.findOne({ where: { userId: user.id } });
-    if (token) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.ALREADY_LOGGED_IN,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    const refreshToken = await this.generateRefreshToken({ userId: user.id.toString() });
-    await this.tokenRepository.save({ userId: user.id, refreshToken: refreshToken });
     return {
       accessToken: await this.jwtService.signAsync(payload),
     };
-  }
-
-  async logout(logoutDto: LogoutDto) {
-    try {
-      const decoded = this.jwtService.verify(logoutDto.refreshToken);
-      if (!decoded) {
-        throw new HttpException(
-          {
-            status: HttpStatus.BAD_REQUEST,
-            error: AuthStatusMessages.EXPIRED_TOKEN,
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.UNAUTHORIZED,
-          error: AuthStatusMessages.UNAUTHORIZED,
-        },
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
   }
 
   generateTokens(payload: { userId: string }): Token {
@@ -153,21 +119,9 @@ export class AuthService {
 
   async refreshToken(tokenDto: RefreshTokenDto): Promise<Token> {
     const { userId } = this.jwtService.verify(tokenDto.refreshToken, {
-      secret: this.configService.get('JWT_SECRET'),
+      secret: this.configService.get('JWT_REFRESH_SECRET'),
     });
-    const token = await this.tokenRepository.findOne({ where: { userId } });
-    if (!token) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: AuthStatusMessages.EXPIRED_TOKEN,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    await this.tokenRepository.update({ userId }, { deletedAt: new Date() });
     const tokens = await this.generateTokens({ userId });
-    await this.tokenRepository.save({ userId, refreshToken: tokens.refreshToken });
 
     return tokens;
   }

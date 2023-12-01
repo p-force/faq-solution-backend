@@ -6,9 +6,7 @@ import { MailerModule } from 'src/common/modules/mailer/mailer.module';
 import { AuthController } from './auth.controller';
 import { RecoveryPasswordCode } from './entities/recovery.entity';
 import { JwtModule } from '@nestjs/jwt';
-import { config } from 'dotenv';
 import { jwtConstants } from './dto/jwt.constants';
-config();
 @Module({
   imports: [
     TypeOrmModule.forFeature([Users, RecoveryPasswordCode]),

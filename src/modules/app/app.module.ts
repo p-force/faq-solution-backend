@@ -7,11 +7,13 @@ import { LoggerModule } from '../../common/modules/logger/logger.module';
 import { AppController } from './app.controller';
 import { PlaceAnOrderFormModule } from '../placeAnOrderForm/placeAnOrderForm.module';
 import { AuthModule } from '../auth/auth.module';
+import { MyAccountModule } from '../myAccount/myAccount.module';
 
 @Module({
   imports: [
     ContactFormModule,
     PlaceAnOrderFormModule,
+    MyAccountModule,
     AuthModule,
     DbModule,
     LoggerModule,

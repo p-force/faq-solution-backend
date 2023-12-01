@@ -18,8 +18,8 @@ export class MyAccountController {
     status: HttpStatus.BAD_REQUEST,
     description: `${AccountStatusMessages.ERROR}\t\n\t\nsome error message`,
   })
-  @Post('/orders-history')
-  async getOrders(@Body() email: string) {
+  @Post('orders-history')
+  async getOrders(@Body() { email }) {
     return this.accountService.getOrders(email);
   }
 
@@ -33,8 +33,8 @@ export class MyAccountController {
     status: HttpStatus.BAD_REQUEST,
     description: `${AccountStatusMessages.ERROR}\t\n\t\nsome error message`,
   })
-  @Post('/get-personal-details')
-  async getPersonalDetails(@Body() email: string) {
+  @Post('get-personal-details')
+  async getPersonalDetails(@Body() { email }) {
     return this.accountService.getPersonalDetails(email);
   }
 
@@ -48,7 +48,7 @@ export class MyAccountController {
     status: HttpStatus.BAD_REQUEST,
     description: `${AccountStatusMessages.ERROR}\t\n\t\nsome error message`,
   })
-  @Post('/change-personal-details')
+  @Post('change-personal-details')
   async changePersonalDetails(
     @Body() oldEmail: string,
     data: { email: string; phone: string; fullName: string },

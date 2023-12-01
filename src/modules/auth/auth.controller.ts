@@ -5,7 +5,6 @@ import { AuthStatusMessages } from './dto/auth.constants';
 import { AuthFormDto } from './dto/users.dto';
 import { LoginFormDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh.dto';
-import { LogoutDto } from './dto/logout.dto';
 
 @ApiTags('Auth Form')
 @Controller('auth')
@@ -20,7 +19,7 @@ export class AuthController {
     status: HttpStatus.BAD_REQUEST,
     description: `${AuthStatusMessages.ALREADY_EXISTS}\t\n\t\nsome error message`,
   })
-  @Post('/registration')
+  @Post('registration')
   async registration(@Body() userData: AuthFormDto) {
     return this.authService.registration(userData);
   }
@@ -44,27 +43,6 @@ export class AuthController {
     status: HttpStatus.OK,
     description: 'Access token successfully refreshed.',
   })
-  @ApiBadRequestResponse({
-    description: 'The request failed. Possible reasons:',
-    content: {
-      'application/json': {
-        examples: {
-          userTokenNotFound: {
-            summary: 'User token not found',
-            value: { status: HttpStatus.BAD_REQUEST, error: AuthStatusMessages.NOT_FOUND },
-          },
-          incorrectRefreshToken: {
-            summary: 'Incorrect refresh token provided',
-            value: { status: HttpStatus.BAD_REQUEST, error: AuthStatusMessages.INCORRECT_CODE },
-          },
-          expiredRefreshToken: {
-            summary: 'Refresh token expired',
-            value: { status: HttpStatus.BAD_REQUEST, error: AuthStatusMessages.EXPIRED_TOKEN },
-          },
-        },
-      },
-    },
-  })
   @Post('/refresh-token')
   async refreshToken(@Body() tokenDto: RefreshTokenDto) {
     try {
@@ -73,21 +51,6 @@ export class AuthController {
       return { access_token: newAccessToken };
     } catch (error) {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
-    }
-  }
-
-  @ApiOperation({ summary: 'Logout' })
-  @ApiOkResponse({})
-  @ApiBadRequestResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: `${AuthStatusMessages.NOT_FOUND}\t\n\t\nNo account with this email`,
-  })
-  @Post('/logout')
-  async logout(@Body() logoutDto: LogoutDto): Promise<any> {
-    try {
-      return await this.authService.logout(logoutDto);
-    } catch (error) {
-      throw new HttpException('Invalid token', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
